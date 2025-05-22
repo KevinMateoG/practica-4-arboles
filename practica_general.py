@@ -1,5 +1,6 @@
 import random
 from arbol_general import *
+import time
 libre = "."
 bloqueo = "X"
 salida = "🏁"
@@ -69,11 +70,11 @@ class Persona:
         self.retrasado = False
         self.historial_movimientos = GeneralTree()
         self.historial_movimientos.root = Node(self.posicion_inicial)
+        self.ultimo_paso = None
     
 
     def bfs_con_arbol(self):
         inicio = self.posicion_inicial
-        meta = self.laberinto.salida
         lab = self.laberinto.laberinto
         tamaño = self.laberinto.tamaño
 
@@ -91,11 +92,11 @@ class Persona:
         nodos = {inicio: arbol.root}
 
         visitado = set()
-        cola = [(inicio, [])]
+        cola = [inicio]
         visitado.add(inicio)
 
         while cola:
-            actual, _ = cola.pop(0)
+            actual = cola.pop()
 
             for dx, dy in movimientos_validos:
                 nx, ny = actual[0] + dx, actual[1] + dy
@@ -108,7 +109,7 @@ class Persona:
                         nodo_hijo = Node(nuevo)
                         nodo_padre.children.append(nodo_hijo)
                         nodos[nuevo] = nodo_hijo
-                        cola.append((nuevo, []))
+                        cola.append(nuevo)
         return arbol
     
     def encontrar_camino_en_arbol(self,nodo, meta, camino_actual=[]):
@@ -132,18 +133,27 @@ class Persona:
             return
 
         arbol_rutas = self.bfs_con_arbol()
+        print(arbol_rutas)
         camino = self.encontrar_camino_en_arbol(arbol_rutas.root, self.laberinto.salida)
+        print(camino)
 
         if not camino or len(camino) < 2:
-            print("ay muchachos... no hay ruta o ya está en la salida.")
+            print("ay muchachos...")
             return
 
-        siguiente_pos = camino[1]  # Solo un paso
+        if self.ultimo_paso and len(camino) > 2:
+            if camino[1] == self.ultimo_paso:
+                siguiente_pos = camino[2]  # salta al segundo paso real
+            else:
+                siguiente_pos = camino[1]
+        else:
+            siguiente_pos = camino[1]
+        
+        siguiente_pos = camino[1]  
         x, y = siguiente_pos
 
-        # Actualizar posición visual
         px, py = self.posicion_inicial
-        self.laberinto.laberinto[px][py] = "."  # Limpiar anterior
+        self.laberinto.laberinto[px][py] = "."  
         self.laberinto.laberinto[x][y] = "😀"
         self.posicion_inicial = siguiente_pos
 
@@ -157,17 +167,48 @@ class Persona:
             self.retrasado = True
             print("🐌 Cayó en un retrasador: perderá el siguiente turno")
 
-        # Registrar en árbol histórico
-        nuevo_nodo = Node(siguiente_pos)
         self.historial_movimientos.insert(self.historial_movimientos.root.value, siguiente_pos)
 
-lab = Laberinto(3)
-lab.poner_elementos("T")
+tamaño = 3
+lab = Laberinto(tamaño)
 per = Persona(lab)
+per1 = None
+print("Bienvenido al laberinto del terror 👻")
+print("ya tienens un pesonje creado\n" \
+    "el laberinto esta vacio en este moemnto")
+
 while True:
-    opcion = input()
-    if opcion == "":
-        per.mover_un_paso()
+
+        print("1. Crear un nuevo pesonaje")
+        print("2. si quieres poner una trampa")
+        print("3. si quieres poner un retardante")
+        print("4. si queires poner un bloqueo")
+        print("5. si quieres mover tu pesonaje (este se movera por la ruta mas corta)")
         print(per.laberinto)
+        opcion = input()
+        
         print("Árbol de decisiones:")
         print(per.historial_movimientos)
+
+        if opcion == "1":
+            per1 = Persona(lab)
+        
+        if opcion == "2":
+            lab.poner_elementos(trampa)
+
+        if opcion == "3":
+            lab.poner_elementos(retraso)
+
+        if opcion == "4":
+            lab.poner_elementos(bloqueo)
+
+        if opcion == "5":
+            if per1 is not None:
+                per1.mover_un_paso()
+            per.mover_un_paso()
+        
+        if opcion == "6":
+            lab = Laberinto(tamaño)
+            if per1 is not None:
+                per1 = Persona(lab)
+            per = Persona(lab)

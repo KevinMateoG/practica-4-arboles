@@ -105,6 +105,102 @@ class Persona:
                         cola.append(((nx, ny), camino + [(nx, ny)]))
 
         return None  # no hay ruta
+    
+    def bfs_con_arbol(self):
+        inicio = self.posicion_inicial
+        lab = self.laberinto.laberinto
+        tamaño = self.laberinto.tamaño
+
+        movimientos = [(-1,0), (1,0), (0,-1), (0,1), (-1,-1), (-1,1), (1,-1), (1,1)]
+        movimientos_validos = [
+            m for i, m in enumerate(movimientos)
+            if i not in self.perdio_direcciones
+        ]
+
+        # Creamos el árbol de rutas
+        arbol = GeneralTree()
+        arbol.root = Node(inicio)
+
+        # Diccionario para relacionar posiciones con nodos
+        nodos = {inicio: arbol.root}
+
+        visitado = set()
+        cola = [inicio]
+        visitado.add(inicio)
+
+        while cola:
+            actual = cola.pop()
+
+            for dx, dy in movimientos_validos:
+                nx, ny = actual[0] + dx, actual[1] + dy
+                nuevo = (nx, ny)
+
+                if 0 <= nx < tamaño and 0 <= ny < tamaño:
+                    if nuevo not in visitado and lab[nx][ny] != "X":
+                        visitado.add(nuevo)
+                        nodo_padre = nodos[actual]
+                        nodo_hijo = Node(nuevo)
+                        nodo_padre.children.append(nodo_hijo)
+                        nodos[nuevo] = nodo_hijo
+                        cola.append(nuevo)
+        return arbol
+    
+    def encontrar_camino_en_arbol(self,nodo, meta, camino_actual=[]):
+        camino_actual = camino_actual + [nodo.value]
+
+        if nodo.value == meta:
+            return camino_actual
+
+        for hijo in nodo.children:
+            resultado = self.encontrar_camino_en_arbol(hijo, meta, camino_actual)
+            if resultado:
+                return resultado
+        
+        return None
+    
+    def mover_un_paso(self):
+
+        if self.retrasado:
+            print("😵‍💫 La persona está retrasada y pierde su turno.")
+            self.retrasado = False
+            return
+
+        arbol_rutas = self.bfs_con_arbol()
+        print(arbol_rutas)
+        camino = self.encontrar_camino_en_arbol(arbol_rutas.root, self.laberinto.salida)
+        print(camino)
+
+        if not camino or len(camino) < 2:
+            print("ay muchachos...")
+            return
+
+        if self.ultimo_paso and len(camino) > 2:
+            if camino[1] == self.ultimo_paso:
+                siguiente_pos = camino[2]  # salta al segundo paso real
+            else:
+                siguiente_pos = camino[1]
+        else:
+            siguiente_pos = camino[1]
+        
+        siguiente_pos = camino[1]  
+        x, y = siguiente_pos
+
+        px, py = self.posicion_inicial
+        self.laberinto.laberinto[px][py] = "."  
+        self.laberinto.laberinto[x][y] = "😀"
+        self.posicion_inicial = siguiente_pos
+
+        # Efectos de trampa o retrasador
+        if (x, y) in self.laberinto.trampa:
+            direccion_perdida = random.randint(0, 7)
+            if direccion_perdida not in self.perdio_direcciones:
+                self.perdio_direcciones.append(direccion_perdida)
+                print(f"⚠️ Cayó en una trampa: perdió dirección {direccion_perdida}")
+        if (x, y) in self.laberinto.retraso:
+            self.retrasado = True
+            print("🐌 Cayó en un retrasador: perderá el siguiente turno")
+
+        self.historial_movimientos.insert(self.historial_movimientos.root.value, siguiente_pos)
 
 lab = Laberinto(3)
 lab.poner_elementos("X")
