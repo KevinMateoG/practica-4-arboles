@@ -178,10 +178,11 @@ print("ya tienens un pesonje creado\n" \
 while True:
 
         print("1. Crear un nuevo pesonaje")
-        print("2. si quieres poner una trampa")
-        print("3. si quieres poner un retardante")
-        print("4. si queires poner un bloqueo")
-        print("5. si quieres mover tu pesonaje (este se movera por la ruta mas corta)")
+        print("2. Si quieres poner una trampa")
+        print("3. Si quieres poner un retardante")
+        print("4. Si queires poner un bloqueo")
+        print("5. Si quieres mover tu pesonaje (este se movera por la ruta mas corta)")
+        print("6. Para reiniciar el laberinto")
         print(per.laberinto)
         opcion = input()
         
