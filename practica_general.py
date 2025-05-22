@@ -84,11 +84,9 @@ class Persona:
             if i not in self.perdio_direcciones
         ]
 
-        # Creamos el árbol de rutas
         arbol = GeneralTree()
         arbol.root = Node(inicio)
 
-        # Diccionario para relacionar posiciones con nodos
         nodos = {inicio: arbol.root}
 
         visitado = set()
