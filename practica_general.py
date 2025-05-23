@@ -16,6 +16,7 @@ class Laberinto:
         self.bloqueo = []
         self.retraso = []
         
+        
     def crear_laberinto(self, tamaño):
         lista = []
         for i in range(tamaño):
@@ -71,7 +72,7 @@ class Persona:
         self.historial_movimientos = GeneralTree()
         self.historial_movimientos.root = Node(self.posicion_inicial)
         self.ultimo_paso = None
-    
+        self.casillas_visitadas = {self.posicion_inicial}
 
     def bfs_con_arbol(self):
         inicio = self.posicion_inicial
@@ -124,38 +125,38 @@ class Persona:
         return None
     
     def mover_un_paso(self):
-
         if self.retrasado:
             print("😵‍💫 La persona está retrasada y pierde su turno.")
             self.retrasado = False
             return
 
         arbol_rutas = self.bfs_con_arbol()
-        print(arbol_rutas)
         camino = self.encontrar_camino_en_arbol(arbol_rutas.root, self.laberinto.salida)
-        print(camino)
+        print("Camino calculado:", camino)
 
         if not camino or len(camino) < 2:
-            print("ay muchachos...")
+            print("ay muchachos... no hay ruta o ya está en la meta.")
             return
 
-        if self.ultimo_paso and len(camino) > 2:
-            if camino[1] == self.ultimo_paso:
-                siguiente_pos = camino[2]  # salta al segundo paso real
-            else:
-                siguiente_pos = camino[1]
-        else:
-            siguiente_pos = camino[1]
-        
-        siguiente_pos = camino[1]  
-        x, y = siguiente_pos
+        siguiente_pos = None
+        for pos in camino[1:]:
+            if pos not in self.casillas_visitadas:
+                siguiente_pos = pos
+                break
+
+        if not siguiente_pos:
+            print("🔁 No hay paso nuevo, personaje ya visitó todas las opciones cercanas.")
+            return
+
+        self.casillas_visitadas.add(siguiente_pos)
 
         px, py = self.posicion_inicial
-        self.laberinto.laberinto[px][py] = "."  
+        x, y = siguiente_pos
+        self.laberinto.laberinto[px][py] = "."
         self.laberinto.laberinto[x][y] = "😀"
+        self.ultimo_paso = self.posicion_inicial
         self.posicion_inicial = siguiente_pos
 
-        # Efectos de trampa o retrasador
         if (x, y) in self.laberinto.trampa:
             direccion_perdida = random.randint(0, 7)
             if direccion_perdida not in self.perdio_direcciones:
@@ -165,7 +166,10 @@ class Persona:
             self.retrasado = True
             print("🐌 Cayó en un retrasador: perderá el siguiente turno")
 
-        self.historial_movimientos.insert(self.historial_movimientos.root.value, siguiente_pos)
+        ultimo_nodo = self.historial_movimientos.root
+        while ultimo_nodo.children:
+            ultimo_nodo = ultimo_nodo.children[-1]
+        self.historial_movimientos.insert(ultimo_nodo.value, siguiente_pos)
 
 tamaño = 3
 lab = Laberinto(tamaño)
